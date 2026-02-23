@@ -10,14 +10,6 @@
       }
     },
     {
-      "src": "backend/manage.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.11"
-      },
-      "entrypoint": "manage.py"
-    },
-    {
       "src": "frontend/package.json",
       "use": "@vercel/node",
       "config": {
