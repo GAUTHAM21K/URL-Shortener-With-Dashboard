@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=shortener_db
+      - POSTGRES_USER=gautham
+      - POSTGRES_PASSWORD=password123
+
+  web:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/code
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://gautham:password123@db:5432/shortener_db
+    depends_on:
+      - db
