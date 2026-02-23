@@ -13,13 +13,17 @@
       "src": "frontend",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "frontend/dist"
+        "buildCommand": "npm install && npm run build",
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "backend/core/wsgi.py" },
     { "src": "/admin/(.*)", "dest": "backend/core/wsgi.py" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/vite.svg", "dest": "/vite.svg" },
+    { "src": "/index.html", "dest": "/index.html" },
     { "src": "/(.*)", "dest": "/index.html", "status": 200 }
   ],
   "env": {
