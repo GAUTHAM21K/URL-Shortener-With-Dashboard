@@ -1,8 +1,18 @@
 import dj_database_url
 import os
+from pathlib import Path
 
-# Allow Vercel domains
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app']
+# Build paths inside the project
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# SECURITY: Secret key (use environment variable in production)
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+
+# DEBUG mode (disable in production)
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+# Allow Vercel domains and localhost
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app', '*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -12,14 +22,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Add these three
+    # Third-party apps
     'rest_framework',
     'corsheaders',
     'shortener', 
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # Keep this at the top
+    'corsheaders.middleware.CorsMiddleware',  # Must be at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -28,6 +38,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
@@ -44,7 +56,8 @@ TEMPLATES = [
         },
     },
 ]
-# Use Neon Database URL from environment variables
+
+# Database configuration
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
@@ -53,17 +66,53 @@ DATABASES = {
     )
 }
 
-# Update WSGI for Vercel
+# WSGI Application
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Allow all subdomains of vercel and localhost
-ALLOWED_HOSTS = ['*'] 
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 
-# This is critical for POST requests (Shortening)
-CSRF_TRUSTED_ORIGINS = [
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# REST Framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100
+}
+
+# CORS configuration - Allow all origins (for development)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
     "https://url-shortener-with-dashboard.vercel.app",
     "https://*.vercel.app"
 ]
 
-# Ensure CORS is wide open for your frontend
-CORS_ALLOW_ALL_ORIGINS = True
+# CSRF configuration
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "https://url-shortener-with-dashboard.vercel.app",
+    "https://*.vercel.app"
+]
