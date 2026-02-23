@@ -41,9 +41,11 @@ urlpatterns = [
     path('api/shorten/', shorten_url),   # POST: Create link
     path('api/urls/', get_all_urls),     # GET: Fetch all links
     
-    # Static files serving
+    # Static files serving - MUST come before catch-all
     re_path(r'^static/(?P<path>.*)$', serve, 
             {'document_root': settings.STATIC_ROOT}),
+    re_path(r'^assets/(?P<path>.*)$', serve, 
+            {'document_root': os.path.join(settings.STATIC_ROOT, 'assets')}),
     
     # Redirect Path (short codes)
     path('<str:short_code>/', redirect_view),
