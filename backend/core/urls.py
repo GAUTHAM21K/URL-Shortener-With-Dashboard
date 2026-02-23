@@ -47,8 +47,8 @@ urlpatterns = [
     re_path(r'^assets/(?P<path>.*)$', serve, 
             {'document_root': os.path.join(settings.STATIC_ROOT, 'assets')}),
     
-    # Redirect Path (short codes)
-    path('<str:short_code>/', redirect_view),
+    # Redirect Path (short codes) - with and without trailing slash
+    re_path(r'^(?P<short_code>[a-zA-Z0-9]+)/?$', redirect_view),
     
     # Catch-all for SPA routing (MUST BE LAST)
     re_path(r'^(?P<path>.*)$', serve_react),
