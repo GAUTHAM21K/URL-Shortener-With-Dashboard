@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
   Link2,
@@ -13,26 +13,34 @@ export default function App() {
   const [longUrl, setLongUrl] = useState("");
   const [urls, setUrls] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Leave this as empty string for Vercel production
   const API_BASE = "";
-  const fetchUrls = async () => {
+
+  // Wrapped in useCallback so it can be used in useEffect safely
+  const fetchUrls = useCallback(async () => {
     try {
-      // This works for both local and production automatically
       const res = await axios.get(`${API_BASE}/api/urls/`);
-      await axios.post(`${API_BASE}/api/shorten/`, { long_url: longUrl });
       setUrls(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch links:", err);
     }
-  };
+  }, [API_BASE]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await axios.post(`${API_BASE}/api/shorten/`, { long_url: longUrl });
       setLongUrl("");
+      // Refresh the list immediately after adding
       fetchUrls();
     } catch (err) {
       console.error("Error shortening URL:", err);
+      alert("Failed to shorten URL. Check backend logs.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,18 +51,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Define the function inside the effect to keep it "contained"
-    const loadData = async () => {
-      try {
-        const res = await axios.get("http://localhost:8000/api/urls/");
-        setUrls(res.data);
-      } catch (err) {
-        console.error("Failed to fetch links:", err);
-      }
-    };
-
-    loadData();
-  }, []);
+    fetchUrls();
+  }, [fetchUrls]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -78,8 +76,11 @@ export default function App() {
                 required
               />
             </div>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
-              Shorten
+            <button
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:bg-blue-400"
+            >
+              {loading ? "Working..." : "Shorten"}
             </button>
           </form>
         </section>
@@ -101,45 +102,57 @@ export default function App() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {urls.map((u, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <a
-                        href={u.short_url}
-                        target="_blank"
-                        className="text-blue-600 font-medium hover:underline flex items-center gap-1"
-                      >
-                        {u.short_url} <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <button
-                        onClick={() => copyToClipboard(u.short_url, i)}
-                        className="text-slate-400 hover:text-slate-600"
-                      >
-                        {copiedId === i ? (
-                          <Check className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-400 truncate max-w-[200px]">
-                      {u.long_url}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="flex items-center gap-1 text-sm font-medium text-slate-700">
-                      <MousePointer2 className="w-4 h-4 text-blue-500" />{" "}
-                      {u.clicks}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" /> {u.created_at}
-                    </div>
+              {urls.length > 0 ? (
+                urls.map((u, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={u.short_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 font-medium hover:underline flex items-center gap-1"
+                        >
+                          {u.short_url} <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <button
+                          onClick={() => copyToClipboard(u.short_url, i)}
+                          className="text-slate-400 hover:text-slate-600"
+                        >
+                          {copiedId === i ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-400 truncate max-w-[250px]">
+                        {u.long_url}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700">
+                      <div className="flex items-center gap-1">
+                        <MousePointer2 className="w-4 h-4 text-blue-500" />{" "}
+                        {u.clicks}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" /> {u.created_at}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="3"
+                    className="px-6 py-10 text-center text-slate-400"
+                  >
+                    No links found. Create your first one above!
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
