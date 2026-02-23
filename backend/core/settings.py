@@ -68,13 +68,24 @@ TEMPLATES = [
 ]
 
 # Database configuration
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        ssl_require=True if os.environ.get('DATABASE_URL') else False
-    )
-}
+# Check if DATABASE_URL is properly set before using it
+db_url = os.environ.get('DATABASE_URL', '')
+if db_url and '://' in db_url and db_url != '://':
+    # Valid database URL provided
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Fall back to SQLite if no valid DATABASE_URL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 # WSGI Application
 WSGI_APPLICATION = 'core.wsgi.application'
