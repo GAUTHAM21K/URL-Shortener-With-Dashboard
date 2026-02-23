@@ -17,8 +17,9 @@ export default function App() {
   const fetchUrls = async () => {
     try {
       // This works for both local and production automatically
-      const API_BASE = import.meta.env.VITE_API_URL || "";
+      const API_BASE = "";
       const res = await axios.get(`${API_BASE}/api/urls/`);
+      await axios.post(`${API_BASE}/api/shorten/`, { long_url: longUrl });
       setUrls(res.data);
     } catch (err) {
       console.error(err);

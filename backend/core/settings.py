@@ -1,15 +1,15 @@
-import dj_database_url
-import os
+# 1. Add your Vercel domain to allowed hosts
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'url-shortener-with-dashboard.vercel.app']
 
-# Allow Vercel domains
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app']
+# 2. Configure CORS to allow your Vercel frontend
+CORS_ALLOWED_ORIGINS = [
+    "https://url-shortener-with-dashboard.vercel.app",
+]
 
-# Use Neon Database URL from environment variables
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
-}
+# Or, for the deployment phase to be safe:
+CORS_ALLOW_ALL_ORIGINS = True 
 
-# Update WSGI for Vercel
-WSGI_APPLICATION = 'core.wsgi.application'
+# 3. Ensure CSRF is also handled for your domain
+CSRF_TRUSTED_ORIGINS = [
+    "https://url-shortener-with-dashboard.vercel.app",
+]
