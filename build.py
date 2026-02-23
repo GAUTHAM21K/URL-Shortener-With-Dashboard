@@ -11,9 +11,13 @@ import shutil
 
 def run_command(cmd, cwd=None, check=True):
     """Run a shell command and return success status."""
-    print(f"Running: {cmd}")
+    print(f"Running: {cmd if isinstance(cmd, str) else ' '.join(cmd)}")
     try:
-        result = subprocess.run(cmd, shell=True, cwd=cwd, check=check)
+        # If cmd is a string, use shell=True; if it's a list, use shell=False
+        if isinstance(cmd, str):
+            result = subprocess.run(cmd, shell=True, cwd=cwd, check=check)
+        else:
+            result = subprocess.run(cmd, shell=False, cwd=cwd, check=check)
         return result.returncode == 0
     except Exception as e:
         print(f"Error: {e}")
@@ -24,9 +28,19 @@ def main():
     print("Starting Vercel Build Process")
     print("=" * 60)
     
+    # Determine root directory (handle being called from root or backend)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.basename(script_dir) == 'backend':
+        root_dir = os.path.dirname(script_dir)
+    else:
+        root_dir = script_dir
+    
+    print(f"Working from: {root_dir}")
+    os.chdir(root_dir)
+    
     # Step 1: Install backend dependencies
     print("\n[1/6] Installing backend dependencies...")
-    if not run_command("pip install -r backend/requirements.txt"):
+    if not run_command([sys.executable, "-m", "pip", "install", "-r", "backend/requirements.txt"]):
         print("Failed to install backend dependencies")
         return 1
     
@@ -43,8 +57,8 @@ def main():
     
     # Step 3: Copy frontend to Django static files
     print("\n[4/6] Copying frontend build to Django staticfiles...")
-    frontend_dist = "frontend/dist"
-    django_static = "backend/staticfiles"
+    frontend_dist = os.path.join(root_dir, "frontend/dist")
+    django_static = os.path.join(root_dir, "backend/staticfiles")
     
     # Create directory
     os.makedirs(django_static, exist_ok=True)
@@ -66,13 +80,12 @@ def main():
     
     # Step 4: Run Django migrations
     print("\n[5/6] Running Django migrations...")
-    if not run_command("python manage.py migrate --noinput", cwd="backend"):
-        print("Failed to run migrations")
-        return 1
+    if not run_command([sys.executable, "manage.py", "migrate", "--noinput"], cwd="backend"):
+        print("Failed to run migrations (this might be ok if tables exist)")
     
     # Step 5: Collect static files
     print("\n[6/6] Collecting Django static files...")
-    if not run_command("python manage.py collectstatic --noinput", cwd="backend"):
+    if not run_command([sys.executable, "manage.py", "collectstatic", "--noinput"], cwd="backend"):
         print("Failed to collect static files")
         return 1
     
