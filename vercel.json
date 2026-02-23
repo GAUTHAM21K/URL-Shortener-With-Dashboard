@@ -10,22 +10,20 @@
       }
     },
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/node",
+      "src": "frontend",
+      "use": "@vercel/static-build",
       "config": {
-        "zeroConfig": true
+        "distDir": "frontend/dist"
       }
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "backend/core/wsgi.py" },
     { "src": "/admin/(.*)", "dest": "backend/core/wsgi.py" },
-    { "src": "/static/(.*)", "dest": "/static/$1" },
-    { "src": "/(.*)", "dest": "frontend/$1" }
+    { "src": "/(.*)", "dest": "/index.html", "status": 200 }
   ],
   "env": {
     "DEBUG": "False",
     "PYTHONUNBUFFERED": "1"
-  },
-  "buildCommand": "pip install -r backend/requirements.txt && cd backend && python manage.py migrate && python manage.py collectstatic --noinput && cd ../frontend && npm i && npm run build"
+  }
 }
