@@ -19,36 +19,35 @@ from django.urls import path, re_path
 from django.views.static import serve
 from django.conf import settings
 from shortener.views import shorten_url, redirect_view, get_all_urls
+import os
+from django.http import FileResponse, HttpResponse
 
 def serve_react(request, path=None):
     """Serve React app for SPA routing."""
-    import os
-    from django.http import FileResponse, HttpResponse
-    
     # Try to serve the index.html from static files
+    from django.conf import settings
     index_path = os.path.join(settings.STATIC_ROOT, 'index.html')
     if os.path.exists(index_path):
-        return FileResponse(open(index_path, 'rb'), content_type='text/html')
-    
+        try:
+            return FileResponse(open(index_path, 'rb'), content_type='text/html')
+        except Exception:
+            return HttpResponse('Frontend not available', status=404)
     return HttpResponse('Frontend not available', status=404)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # API Endpoints
+    # API Endpoints (must come BEFORE catch-all)
     path('api/shorten/', shorten_url),   # POST: Create link
     path('api/urls/', get_all_urls),     # GET: Fetch all links
     
-    # Redirect Path
+    # Static files serving
+    re_path(r'^static/(?P<path>.*)$', serve, 
+            {'document_root': settings.STATIC_ROOT}),
+    
+    # Redirect Path (short codes)
     path('<str:short_code>/', redirect_view),
     
-    # Serve static/frontend files
-    re_path(r'^(?P<path>.*)$', serve_react),  # Catch-all for SPA
+    # Catch-all for SPA routing (MUST BE LAST)
+    re_path(r'^(?P<path>.*)$', serve_react),
 ]
-
-# Serve static files in production
-if settings.DEBUG is False:
-    urlpatterns += [
-        re_path(r'^static/(?P<path>.*)$', serve, 
-                {'document_root': settings.STATIC_ROOT}),
-    ]
