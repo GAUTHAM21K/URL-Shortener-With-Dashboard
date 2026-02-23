@@ -6,13 +6,22 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY: Secret key (use environment variable in production)
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+if not os.environ.get('SECRET_KEY'):
+    # Generate a fallback key if not in environment
+    SECRET_KEY = 'django-insecure-dev-key-change-in-production-asdf1234'
+else:
+    SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# DEBUG mode (disable in production)
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# DEBUG mode - false in production on Vercel
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # Allow Vercel domains and localhost
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app', '*']
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    '*.vercel.app',
+    'url-shortener-with-dashboard.vercel.app',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,22 +99,51 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Logging configuration - important for debugging on Vercel
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'shortener': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
 # REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
 
-# CORS configuration - Allow all origins (for development)
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS configuration - Allow frontend domain
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8000",
     "https://url-shortener-with-dashboard.vercel.app",
-    "https://*.vercel.app"
 ]
+
+# In production, allow all origins (Vercel)
+if not DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 # CSRF configuration
 CSRF_TRUSTED_ORIGINS = [
@@ -116,3 +154,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://url-shortener-with-dashboard.vercel.app",
     "https://*.vercel.app"
 ]
+
+# Allow credentials in CORS
+CORS_ALLOW_CREDENTIALS = True

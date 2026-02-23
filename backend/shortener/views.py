@@ -1,10 +1,30 @@
 from django.shortcuts import render
+import os
+import logging
 
 # Create your views here.
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import URL
+
+logger = logging.getLogger(__name__)
+
+def get_base_url(request):
+    """Get the base URL for generating short links."""
+    # First try to get from environment variable (Vercel)
+    base_url = os.environ.get('BASE_URL')
+    if base_url:
+        return base_url
+    
+    # Fall back to request's domain
+    if request.is_secure():
+        protocol = 'https'
+    else:
+        protocol = 'http'
+    
+    domain = request.get_host()
+    return f"{protocol}://{domain}"
 
 @api_view(['POST'])
 def shorten_url(request):
@@ -22,12 +42,15 @@ def shorten_url(request):
         # Get existing if already shortened, or create new
         url_obj, created = URL.objects.get_or_create(long_url=long_url)
         
+        base_url = get_base_url(request)
+        
         return Response({
             'short_code': url_obj.short_code,
             'long_url': url_obj.long_url,
-            'short_url': f"http://localhost:8000/{url_obj.short_code}"
+            'short_url': f"{base_url}/{url_obj.short_code}"
         })
     except Exception as e:
+        logger.error(f"Error in shorten_url: {str(e)}", exc_info=True)
         return Response(
             {'error': f'Failed to shorten URL: {str(e)}'},
             status=500
@@ -44,15 +67,17 @@ def redirect_view(request, short_code):
 def get_all_urls(request):
     try:
         urls = URL.objects.all().order_by('-created_at')
+        base_url = get_base_url(request)
         data = [{
             "id": u.id,  # Important for later!
-            "short_url": f"http://localhost:8000/{u.short_code}",
+            "short_url": f"{base_url}/{u.short_code}",
             "long_url": u.long_url,
             "clicks": u.clicks,
             "created_at": u.created_at.strftime("%Y-%m-%d")
         } for u in urls]
         return Response(data)
     except Exception as e:
+        logger.error(f"Error in get_all_urls: {str(e)}", exc_info=True)
         return Response(
             {'error': f'Failed to fetch URLs: {str(e)}'},
             status=500
