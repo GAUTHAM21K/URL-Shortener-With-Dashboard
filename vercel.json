@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r backend/requirements.txt && cd frontend && npm install && npm run build && cd .. && mkdir -p backend/staticfiles && cp -r frontend/dist/* backend/staticfiles/ && cd backend && python manage.py migrate --noinput && python manage.py collectstatic --noinput && cd ..",
+  "buildCommand": "python build.py",
   "builds": [
     {
       "src": "backend/core/wsgi.py",
