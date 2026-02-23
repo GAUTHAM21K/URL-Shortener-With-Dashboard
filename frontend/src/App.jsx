@@ -13,11 +13,10 @@ export default function App() {
   const [longUrl, setLongUrl] = useState("");
   const [urls, setUrls] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
-
+  const API_BASE = "";
   const fetchUrls = async () => {
     try {
       // This works for both local and production automatically
-      const API_BASE = "";
       const res = await axios.get(`${API_BASE}/api/urls/`);
       await axios.post(`${API_BASE}/api/shorten/`, { long_url: longUrl });
       setUrls(res.data);
@@ -28,11 +27,13 @@ export default function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.post("http://localhost:8000/api/shorten/", {
-      long_url: longUrl,
-    });
-    setLongUrl("");
-    fetchUrls();
+    try {
+      await axios.post(`${API_BASE}/api/shorten/`, { long_url: longUrl });
+      setLongUrl("");
+      fetchUrls();
+    } catch (err) {
+      console.error("Error shortening URL:", err);
+    }
   };
 
   const copyToClipboard = (text, id) => {
